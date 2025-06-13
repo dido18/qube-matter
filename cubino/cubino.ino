@@ -1,5 +1,7 @@
 #include "Modulino.h"
 
+#define DEBUG
+
 ModulinoMovement movement;
 
 float ax;
@@ -9,10 +11,6 @@ float roll;
 float pitch;
 float yaw;
 
-const float GRAVITY = 0.9; // Should be 1g, but seeing at the value it is not precise.  Gravity in g-units (1g = 9.80665 m/s²)
-
-
-
 void setup() {
   Serial.begin(9600);
   Modulino.begin();
@@ -20,21 +18,63 @@ void setup() {
 }
 
 
-// void processCubeGesture(float ax, float ay, float az, float gx, float gy, float gz) {
-//   // Double tap detection: Check for a spike above threshold (ignore gravity ~1g)
-//   checkDoubleTap(ax, ay, az);
-// }
+enum ShakeState {
+  SHAKE_IDLE,
+  SHAKE_RUNNING
+};
+static ShakeState shakeState = SHAKE_IDLE;
+static unsigned long shakeStart = 0;
 
- // Internal state variables
-   // Tap detection parameters
+const float shakeThreshold = 0.5;        // g
+const unsigned long shakeDuration = 50; // ms
+
+
+bool isShaked(float ax, float ay, unsigned long now) {  
+  float magnitude = sqrt(ax * ax + ay * ay);
+
+  // #ifdef DEBUG
+  //   Serial.print("magnitude: ");
+  //   Serial.println(magnitude);
+  // #endif
+
+  switch (shakeState) {
+    case SHAKE_IDLE:
+      if (magnitude > shakeThreshold) {
+        shakeStart = now;
+        shakeState = SHAKE_RUNNING;
+        #ifdef DEBUG
+          Serial.println("SHAKING START");
+        #endif
+      }
+      break;
+
+    case SHAKE_RUNNING:
+      if (magnitude > shakeThreshold) {
+        if (now - shakeStart > shakeDuration) {
+          shakeState = SHAKE_IDLE;
+          return true;  // Shake confirmed
+        }
+      } else {
+         #ifdef DEBUG
+          Serial.println("SHAKING INTERRUPTED");
+        #endif
+        // Shake interrupted
+        shakeState = SHAKE_IDLE;
+      }
+      break;
+  }
+
+  return false;
+}
+
 const float highThreshold = 1.5;     // g - peak value
 const float lowThreshold = 0.8;      // g - fall back to near rest
 const unsigned long maxInterval = 150; // ms - time between rise and fall
 
 static enum { IDLE, PEAK_DETECTED } state = IDLE;
 static unsigned long peakTime = 0;
-
-bool checkTapZ(float Az, unsigned long now) {
+// Tap: quick, isolated spike, short duration, usually on one axis (Z).
+bool isTapped(float Az, unsigned long now) {
   Az = abs(Az);
   switch (state) {
     case IDLE:
@@ -61,60 +101,31 @@ bool checkTapZ(float Az, unsigned long now) {
   return false; // No tap detected
 }
 
-enum TwistState { TWIST_IDLE, TWIST_RIGHT, TWIST_LEFT };
+const float sensitivity = 0.5;   // Adjust for responsiveness
+const float deadZone = 5.0;      // Ignore small noise
+static float brightness = 50.0;  // Initial brightness (0–100%)
+static unsigned long lastUpdate = 0;
 
-const float twistThreshold = 100.0;       // deg/s to detect twist start
-const float stopThreshold = 30.0;          // deg/s to detect stop
-const unsigned long minDuration = 50;      // ms
-const unsigned long maxDuration = 300;     // ms
-
-static TwistState twistState = TWIST_IDLE;
-static unsigned long startTime = 0;
-
-String checkTwistZ(float Gz, unsigned long now) {
-  switch (twistState) {
-    case TWIST_IDLE:
-      if (Gz > twistThreshold) {
-        twistState = TWIST_RIGHT;
-        startTime = now;
-      } else if (Gz < -twistThreshold) {
-        twistState = TWIST_LEFT;
-        startTime = now;
-      }
-      break;
-
-    case TWIST_RIGHT:
-      if (abs(Gz) < stopThreshold) {
-        unsigned long duration = now - startTime;
-        if (duration >= minDuration && duration <= maxDuration) {
-          twistState = TWIST_IDLE;
-          return "right";
-        } else {
-          twistState = TWIST_IDLE;
-        }
-      } else if (now - startTime > maxDuration) {
-        // Timeout
-        twistState = TWIST_IDLE;
-      }
-      break;
-
-    case TWIST_LEFT:
-      if (abs(Gz) < stopThreshold) {
-        unsigned long duration = now - startTime;
-        if (duration >= minDuration && duration <= maxDuration) {
-          state = IDLE;
-          return "left";
-        } else {
-          state = IDLE;
-        }
-      } else if (now - startTime > maxDuration) {
-        // Timeout
-        state = IDLE;
-      }
-      break;
+float updateBrightnessFromGyro(float Gz, unsigned long now) {
+  if (lastUpdate == 0) {
+    lastUpdate = now;
+    return brightness;
   }
 
-  return "";  // no twist detected
+  float deltaTime = (now - lastUpdate) / 1000.0;  // in seconds
+  lastUpdate = now;
+
+  // Ignore tiny rotations (noise)
+  if (abs(Gz) >= deadZone) {
+    brightness += (-Gz) * sensitivity * deltaTime;  // +Gz (right) decrease, -Gz  (left) increases
+  }
+  
+  // Clamp between 0 and 100
+  if (brightness > 100) brightness = 100;
+  if (brightness < 0) brightness = 0;
+
+
+  return brightness;
 }
 
 void triggerMatterAction(String gesture) {
@@ -127,6 +138,7 @@ void triggerMatterAction(String gesture) {
 
 
 String twist;
+unsigned long now;
 
 void loop() {
   movement.update();
@@ -147,18 +159,21 @@ void loop() {
   // Serial.println(az, 3);
 
   // // Print gyroscope values
-  Serial.print(roll, 1);
-  Serial.print(", ");
-  Serial.print(pitch, 1);
-  Serial.print(", ");
-  Serial.println(yaw, 1);
+  // Serial.print(roll, 1);
+  // Serial.print(", ");
+  // Serial.print(pitch, 1);
+  // Serial.print(", ");
+  // Serial.println(yaw, 1);
 
-  if (checkTapZ(az, millis())) {
-    // triggerMatterAction("tap z");
+  now = millis();
+
+  if (isTapped(az, now)) {
+    triggerMatterAction("tap z");
   }
-  twist = checkTwistZ(yaw, millis() );
-  if (twist != ""){
-    Serial.println(twist);
-    triggerMatterAction("twisted");
+ 
+  Serial.println(updateBrightnessFromGyro(yaw, now));
+
+  if (isShaked(ax, ay, now)){
+    triggerMatterAction("shaked");
   }
 }
