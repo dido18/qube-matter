@@ -106,7 +106,7 @@ const float deadZone = 5.0;      // Ignore small noise
 static float brightness = 50.0;  // Initial brightness (0–100%)
 static unsigned long lastUpdate = 0;
 
-float updateBrightnessFromGyro(float Gz, unsigned long now) {
+float getKnobValue(float Gz, unsigned long now) {
   if (lastUpdate == 0) {
     lastUpdate = now;
     return brightness;
@@ -171,7 +171,7 @@ void loop() {
     triggerMatterAction("tap z");
   }
  
-  Serial.println(updateBrightnessFromGyro(yaw, now));
+  Serial.println(getKnobValue(yaw, now));
 
   if (isShaked(ax, ay, now)){
     triggerMatterAction("shaked");
