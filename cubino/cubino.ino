@@ -3,6 +3,7 @@
 #define DEBUG
 
 ModulinoMovement movement;
+ModulinoPixels leds;
 
 float ax;
 float ay;
@@ -15,6 +16,7 @@ void setup() {
   Serial.begin(9600);
   Modulino.begin();
   movement.begin();
+  leds.begin();
 }
 
 
@@ -29,7 +31,7 @@ const float shakeThreshold = 0.5;        // g
 const unsigned long shakeDuration = 50; // ms
 
 
-bool isShaked(float ax, float ay, unsigned long now) {  
+bool isShaked(float ax, float ay, unsigned long now) {
   float magnitude = sqrt(ax * ax + ay * ay);
 
   // #ifdef DEBUG
@@ -119,7 +121,7 @@ float getKnobValue(float Gz, unsigned long now) {
   if (abs(Gz) >= deadZone) {
     brightness += (-Gz) * sensitivity * deltaTime;  // +Gz (right) decrease, -Gz  (left) increases
   }
-  
+
   // Clamp between 0 and 100
   if (brightness > 100) brightness = 100;
   if (brightness < 0) brightness = 0;
@@ -131,14 +133,13 @@ float getKnobValue(float Gz, unsigned long now) {
 void triggerMatterAction(String gesture) {
   Serial.print("Triggering Matter action: ");
   Serial.println(gesture);
-  delay(2000);
-  // Replace with actual Matter event or command call
-  // e.g., matterLight.toggle(), matterScene.activate("scene1"), etc.
 }
 
 
-String twist;
 unsigned long now;
+bool isTappedOn = false;
+bool isShakedOn = false;
+float knobValaue = 0;
 
 void loop() {
   movement.update();
@@ -151,29 +152,36 @@ void loop() {
   pitch = movement.getPitch();
   yaw = movement.getYaw();
 
-  // Serial.print("x ");
-  // Serial.print(ax, 3);
-  // Serial.print("	y ");
-  // Serial.print(ay, 3);
-  // Serial.print("	z ");
-  // Serial.println(az, 3);
-
-  // // Print gyroscope values
-  // Serial.print(roll, 1);
-  // Serial.print(", ");
-  // Serial.print(pitch, 1);
-  // Serial.print(", ");
-  // Serial.println(yaw, 1);
-
   now = millis();
 
   if (isTapped(az, now)) {
+    if (isTappedOn == false){
+      isTappedOn = true;
+      leds.set(0, BLUE, 25);
+      leds.show();
+    }else{
+      isTappedOn = false;
+      leds.clear(0);
+      leds.show();
+    }
     triggerMatterAction("tap z");
   }
- 
-  Serial.println(getKnobValue(yaw, now));
+  
+  knobValaue = getKnobValue(yaw, now);
+  int i = map(knobValaue, 0, 100, 0, 7);
+
+  Serial.println(i);
 
   if (isShaked(ax, ay, now)){
+    if (isShakedOn == false){
+      leds.set(7, RED, 25);
+      leds.show();
+      isShakedOn = true;
+    }else{
+      isShakedOn = false;
+       leds.clear(7);
+       leds.show();
+    }
     triggerMatterAction("shaked");
   }
 }
