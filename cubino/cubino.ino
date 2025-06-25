@@ -9,7 +9,8 @@ ModulinoPixels leds;
 
 #define DEBUG
 #define ENABLE_MATTER
-// If there's no built-in button set a pin where a button is connected
+
+
 #ifndef BTN_BUILTIN
   #define BTN_BUILTIN PA0
 #endif
@@ -181,7 +182,11 @@ void logAction(String gesture) {
 void decommission_handler()
 {
   // If the button is not pressed or the device is not commissioned - return
-  if (digitalRead(BTN_BUILTIN) != LOW || !Matter.isDeviceCommissioned()) {
+  if (digitalRead(BTN_BUILTIN) != LOW ) {
+    Serial.println("Button is not pressed");
+    return;
+  }
+  if (!Matter.isDeviceCommissioned()){
     return;
   }
 
@@ -245,7 +250,7 @@ void loop() {
       logAction("tap z OFF");
       matter_switch.set_state(false);
     }
-    
+
   }
 
   knobValaue = getKnobValue(yaw, now);
