@@ -1,9 +1,19 @@
 #include "Modulino.h"
+#include <Matter.h>
+#include <MatterSwitch.h>
 
-#define DEBUG
+MatterSwitch matter_switch;
 
 ModulinoMovement movement;
 ModulinoPixels leds;
+
+#define DEBUG
+#define ENABLE_MATTER
+// If there's no built-in button set a pin where a button is connected
+#ifndef BTN_BUILTIN
+  #define BTN_BUILTIN PA0
+#endif
+
 
 float ax;
 float ay;
@@ -13,10 +23,39 @@ float pitch;
 float yaw;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Modulino.begin();
   movement.begin();
   leds.begin();
+
+  pinMode(BTN_BUILTIN, INPUT_PULLUP);
+
+#ifdef ENABLE_MATTER
+  Matter.begin();
+  matter_switch.begin();
+
+  if (!Matter.isDeviceCommissioned()) {
+    Serial.println("Matter device is not commissioned");
+    Serial.println("Commission it to your Matter hub with the manual pairing code or QR code");
+    Serial.printf("Manual pairing code: %s\n", Matter.getManualPairingCode().c_str());
+    Serial.printf("QR code URL: %s\n", Matter.getOnboardingQRCodeUrl().c_str());
+  }
+  Serial.printf("Manual pairing code: %s\n", Matter.getManualPairingCode().c_str());
+  while (!Matter.isDeviceCommissioned()) {
+    delay(200);
+  }
+
+  Serial.println("Waiting for Thread network...");
+  while (!Matter.isDeviceThreadConnected()) {
+    delay(200);
+  }
+  Serial.println("Connected to Thread network");
+  Serial.println("Waiting for Matter device discovery...");
+  while (!matter_switch.is_online()) {
+    delay(200);
+  }
+  Serial.println("Matter device is now online");
+#endif
 }
 
 
@@ -44,9 +83,9 @@ bool isShaked(float ax, float ay, unsigned long now) {
       if (magnitude > shakeThreshold) {
         shakeStart = now;
         shakeState = SHAKE_RUNNING;
-        #ifdef DEBUG
-          Serial.println("SHAKING START");
-        #endif
+        // #ifdef DEBUG
+        //   Serial.println("SHAKING START");
+        // #endif
       }
       break;
 
@@ -57,9 +96,9 @@ bool isShaked(float ax, float ay, unsigned long now) {
           return true;  // Shake confirmed
         }
       } else {
-         #ifdef DEBUG
-          Serial.println("SHAKING INTERRUPTED");
-        #endif
+        //  #ifdef DEBUG
+        //   Serial.println("SHAKING INTERRUPTED");
+        // #endif
         // Shake interrupted
         shakeState = SHAKE_IDLE;
       }
@@ -130,9 +169,47 @@ float getKnobValue(float Gz, unsigned long now) {
   return brightness;
 }
 
-void triggerMatterAction(String gesture) {
+bool button_pressed_last = false;
+
+
+void logAction(String gesture) {
   Serial.print("Triggering Matter action: ");
   Serial.println(gesture);
+}
+
+
+void decommission_handler()
+{
+  // If the button is not pressed or the device is not commissioned - return
+  if (digitalRead(BTN_BUILTIN) != LOW || !Matter.isDeviceCommissioned()) {
+    return;
+  }
+
+  // Store the time when the button was first pressed
+  uint32_t start_time = millis();
+  // While the button is being pressed
+  while (digitalRead(BTN_BUILTIN) == LOW) {
+    // Calculate the elapsed time
+    uint32_t elapsed_time = millis() - start_time;
+    // If the button has been pressed for less than 10 seconds, continue
+    if (elapsed_time < 10000u) {
+      yield();
+      continue;
+    }
+
+    // Blink the LED to indicate the start of the decommissioning process
+    for (uint8_t i = 0u; i < 10u; i++) {
+      digitalWrite(LED_BUILTIN, !(digitalRead(LED_BUILTIN)));
+      delay(100);
+    }
+
+    Serial.println("Starting decommissioning process, device will reboot...");
+    Serial.println();
+    digitalWrite(LED_BUILTIN, LED_BUILTIN_INACTIVE);
+    // This function will not return
+    // The device will restart once decommissioning has finished
+    Matter.decommission();
+  }
 }
 
 
@@ -159,29 +236,36 @@ void loop() {
       isTappedOn = true;
       leds.set(0, BLUE, 25);
       leds.show();
+      logAction("tap z ON");
+      matter_switch.set_state(true);
     }else{
       isTappedOn = false;
       leds.clear(0);
       leds.show();
+      logAction("tap z OFF");
+      matter_switch.set_state(false);
     }
-    triggerMatterAction("tap z");
+    
   }
-  
+
   knobValaue = getKnobValue(yaw, now);
   int i = map(knobValaue, 0, 100, 0, 7);
 
-  Serial.println(i);
 
   if (isShaked(ax, ay, now)){
     if (isShakedOn == false){
       leds.set(7, RED, 25);
       leds.show();
       isShakedOn = true;
+      logAction("shake ON");
     }else{
       isShakedOn = false;
-       leds.clear(7);
+        leds.clear(7);
        leds.show();
+      logAction("shake OFF");
     }
-    triggerMatterAction("shaked");
   }
+
+   // Handle the decommissioning process if requested
+  decommission_handler();
 }
