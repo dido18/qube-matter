@@ -2,8 +2,6 @@
 #include <Matter.h>
 #include <MatterSwitch.h>
 
-MatterSwitch matter_switch;
-
 ModulinoMovement movement;
 ModulinoPixels leds;
 
@@ -11,9 +9,31 @@ ModulinoPixels leds;
 #define ENABLE_MATTER
 
 
-#ifndef BTN_BUILTIN
-  #define BTN_BUILTIN PA0
-#endif
+MatterSwitch tap;
+MatterSwitch shake;
+MatterSwitch faceSwitch[6]; // One for each face
+
+
+enum CubeFace {
+  FACE_TOP = 0,
+  FACE_BOTTOM,
+  FACE_LEFT,
+  FACE_RIGHT,
+  FACE_FRONT,
+  FACE_BACK
+};
+
+// Helper to detect which face is down based on 1g force
+CubeFace detectFace(float ax, float ay, float az) {
+  const float threshold = 0.8; // g, adjust as needed
+  if (az > threshold) return FACE_TOP;
+  if (az < -threshold) return FACE_BOTTOM;
+  if (ax > threshold) return FACE_RIGHT;
+  if (ax < -threshold) return FACE_LEFT;
+  if (ay > threshold) return FACE_FRONT;
+  if (ay < -threshold) return FACE_BACK;
+  return FACE_TOP; // Default/fallback
+}
 
 
 float ax;
@@ -23,17 +43,31 @@ float roll;
 float pitch;
 float yaw;
 
+unsigned long lastFace = 6; // Invalid face to force update on first run
+
+
 void setup() {
   Serial.begin(115200);
+
   Modulino.begin();
   movement.begin();
   leds.begin();
+  leds.clear();
 
   pinMode(BTN_BUILTIN, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_INACTIVE);
+
+  lastFace = detectFace(ax, ay, az);
 
 #ifdef ENABLE_MATTER
   Matter.begin();
-  matter_switch.begin();
+  tap.begin();
+  shake.begin();
+
+  for (int i = 0; i < 6; ++i) {
+    faceSwitch[i].begin();
+  }
 
   if (!Matter.isDeviceCommissioned()) {
     Serial.println("Matter device is not commissioned");
@@ -41,21 +75,34 @@ void setup() {
     Serial.printf("Manual pairing code: %s\n", Matter.getManualPairingCode().c_str());
     Serial.printf("QR code URL: %s\n", Matter.getOnboardingQRCodeUrl().c_str());
   }
-  Serial.printf("Manual pairing code: %s\n", Matter.getManualPairingCode().c_str());
   while (!Matter.isDeviceCommissioned()) {
     delay(200);
   }
-
+  // TODO: show leds animantion to show it is connecting to thread
   Serial.println("Waiting for Thread network...");
   while (!Matter.isDeviceThreadConnected()) {
+    decommission_handler();
     delay(200);
   }
   Serial.println("Connected to Thread network");
   Serial.println("Waiting for Matter device discovery...");
-  while (!matter_switch.is_online()) {
+  while (!tap.is_online()) {
+    decommission_handler();
     delay(200);
   }
-  Serial.println("Matter device is now online");
+  Serial.println("Tap is online...");
+  while (!shake.is_online()) {
+    decommission_handler();
+    delay(200);
+  }
+  Serial.println("Shake is online...");
+   for (int i = 0; i < 6; ++i) {
+    while (!faceSwitch[i].is_online()) {
+      decommission_handler();
+      delay(200);
+    }
+    Serial.printf("FaceSwitch %d is online...\n", i);
+  }
 #endif
 }
 
@@ -143,35 +190,6 @@ bool isTapped(float Az, unsigned long now) {
   return false; // No tap detected
 }
 
-const float sensitivity = 0.5;   // Adjust for responsiveness
-const float deadZone = 5.0;      // Ignore small noise
-static float brightness = 50.0;  // Initial brightness (0–100%)
-static unsigned long lastUpdate = 0;
-
-float getKnobValue(float Gz, unsigned long now) {
-  if (lastUpdate == 0) {
-    lastUpdate = now;
-    return brightness;
-  }
-
-  float deltaTime = (now - lastUpdate) / 1000.0;  // in seconds
-  lastUpdate = now;
-
-  // Ignore tiny rotations (noise)
-  if (abs(Gz) >= deadZone) {
-    brightness += (-Gz) * sensitivity * deltaTime;  // +Gz (right) decrease, -Gz  (left) increases
-  }
-
-  // Clamp between 0 and 100
-  if (brightness > 100) brightness = 100;
-  if (brightness < 0) brightness = 0;
-
-
-  return brightness;
-}
-
-bool button_pressed_last = false;
-
 
 void logAction(String gesture) {
   Serial.print("Triggering Matter action: ");
@@ -183,7 +201,6 @@ void decommission_handler()
 {
   // If the button is not pressed or the device is not commissioned - return
   if (digitalRead(BTN_BUILTIN) != LOW ) {
-    Serial.println("Button is not pressed");
     return;
   }
   if (!Matter.isDeviceCommissioned()){
@@ -219,9 +236,6 @@ void decommission_handler()
 
 
 unsigned long now;
-bool isTappedOn = false;
-bool isShakedOn = false;
-float knobValaue = 0;
 
 void loop() {
   movement.update();
@@ -237,40 +251,34 @@ void loop() {
   now = millis();
 
   if (isTapped(az, now)) {
-    if (isTappedOn == false){
-      isTappedOn = true;
+    Serial.println("tapped");
+      tap.set_state(true);
       leds.set(0, BLUE, 25);
       leds.show();
-      logAction("tap z ON");
-      matter_switch.set_state(true);
-    }else{
-      isTappedOn = false;
-      leds.clear(0);
-      leds.show();
-      logAction("tap z OFF");
-      matter_switch.set_state(false);
-    }
-
+      delay(500);
+      leds.clear();
   }
-
-  knobValaue = getKnobValue(yaw, now);
-  int i = map(knobValaue, 0, 100, 0, 7);
 
 
   if (isShaked(ax, ay, now)){
-    if (isShakedOn == false){
+     Serial.println("shaked");
+      shake.set_state(true);
       leds.set(7, RED, 25);
       leds.show();
-      isShakedOn = true;
-      logAction("shake ON");
-    }else{
-      isShakedOn = false;
-        leds.clear(7);
-       leds.show();
-      logAction("shake OFF");
-    }
+      delay(500);
+      leds.clear();
   }
 
-   // Handle the decommissioning process if requested
+  CubeFace currentFace = detectFace(ax, ay, az);
+   if (currentFace != lastFace) {
+    for (int i = 0; i < 6; ++i) {
+      faceSwitch[i].set_state(i == currentFace);
+    }
+    Serial.printf("Face %d is touching the ground\n", currentFace);
+    lastFace = currentFace;
+  }
+
+  // Handle the Matter actions for tap and shake
+  // Handle the decommissioning process if requested
   decommission_handler();
 }
