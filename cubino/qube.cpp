@@ -81,10 +81,24 @@ QubeFace Qube::detectFace() {
 }
 
 int Qube::isFaceChanged() {
+    static QubeFace candidateFace = FACE_TOP;
+    static unsigned long candidateStart = 0;
+    const unsigned long faceStableThreshold = 300; // ms, adjust as needed
+
     QubeFace currentFace = detectFace();
+    unsigned long now = millis();
+
     if (currentFace != this->lastFace) {
-        this->lastFace = currentFace;
-        return static_cast<int>(currentFace);
+        if (currentFace != candidateFace) {
+            candidateFace = currentFace;
+            candidateStart = now;
+        } else if (now - candidateStart >= faceStableThreshold) {
+            this->lastFace = currentFace;
+            return static_cast<int>(currentFace);
+        }
+    } else {
+        candidateFace = currentFace;
+        candidateStart = now;
     }
     return -1;
 }

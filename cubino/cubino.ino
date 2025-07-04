@@ -30,12 +30,25 @@ void loop() {
 
   int changedFace = qube.isFaceChanged();
   if (changedFace != -1) {
-    Serial.printf("Face %d is touching the ground\n", changedFace);
-  }
+    Serial.printf("Face %d (%s) is touching the ground\n", changedFace, faceToString(changedFace));
+  } 
 
     // Handle the decommissioning process if requested
   decommission_handler();
 
+}
+
+
+const char* faceToString(int face) {
+  switch (face) {
+    case FACE_TOP: return "TOP";
+    case FACE_BOTTOM: return "BOTTOM";
+    case FACE_LEFT: return "LEFT";
+    case FACE_RIGHT: return "RIGHT";
+    case FACE_FRONT: return "FRONT";
+    case FACE_BACK: return "BACK";
+    default: return "UNKNOWN";
+  }
 }
 
 
@@ -75,4 +88,3 @@ void decommission_handler()
     Matter.decommission();
   }
 }
-
