@@ -4,11 +4,11 @@
 
 enum QubeFace {
   FACE_TOP = 0,
-  FACE_BOTTOM,
-  FACE_LEFT,
-  FACE_RIGHT,
-  FACE_FRONT,
-  FACE_BACK,
+  FACE_BOTTOM = 1,
+  FACE_LEFT = 2,
+  FACE_RIGHT = 3,
+  FACE_FRONT = 4,
+  FACE_BACK = 5,
   FACE_UNKNOWN = -1 // Added to handle unknown face state
 };
 
@@ -46,7 +46,7 @@ private:
     unsigned long peakTime = 0;
     static constexpr float highThreshold = 1.0f;
     static constexpr float lowThreshold = 0.5f;
-    static constexpr unsigned long maxInterval = 200; // Max time between high and low threshold
+    static constexpr unsigned long maxInterval = 200; // Max time between high and low threshold of te tap
 
     static constexpr unsigned long faceStableThreshold = 300; // ms, time to consider face stable
 };
