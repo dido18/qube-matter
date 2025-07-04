@@ -4,10 +4,10 @@
 
 Qube qube;
 
-// #define ENABLE_MATTER
+#define ENABLE_MATTER
 
 #ifdef ENABLE_MATTER
-MatterSwitch tap;
+MatterSwitch tapON;
 MatterSwitch shake;
 MatterSwitch faceSwitch[6]; // One for each face
 #endif
@@ -17,7 +17,7 @@ void decommission_handler();
 
 void setup() {
   Serial.begin(115200);
-  
+
   qube.setup();
   matterSetup();
 }
@@ -27,14 +27,24 @@ void loop() {
 
   if(qube.isTapped()) {
     Serial.println("tapped");
+#ifdef ENABLE_MATTER
+    tapON.set_state(true);
+#endif
   }
+
   if(qube.isShaked()){
     Serial.println("shaked");
+#ifdef ENABLE_MATTER
+    shake.set_state(true);
+#endif
   }
 
   QubeFace changedFace = qube.isUpFaceChanged();
   if (changedFace != FACE_UNKNOWN) {
-    Serial.printf("Face %d (%s) is pointing to sky\n", changedFace, faceToString(changedFace));
+     Serial.printf("Face %d (%s) is pointing to sky\n", changedFace, faceToString(changedFace));
+#ifdef ENABLE_MATTER
+    faceSwitch[changedFace].set_state(true);
+#endif
   }
 
   // Handle the decommissioning process if requested
@@ -44,11 +54,19 @@ void loop() {
 void matterSetup() {
 #ifdef ENABLE_MATTER
   Matter.begin();
-  tap.begin();
+  tapON.begin();
   shake.begin();
+
+  pinMode(BTN_BUILTIN, INPUT_PULLUP);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LED_BUILTIN_INACTIVE);
+
+  // TODO: det_device_name does not work on alexa ??
+  // tapON.set_device_name("MyTap ON");
 
   for (int i = 0; i < 6; ++i) {
     faceSwitch[i].begin();
+    // faceSwitch[i].set_device_name(faceToString(i));
   }
 
   if (!Matter.isDeviceCommissioned()) {
@@ -67,11 +85,12 @@ void matterSetup() {
   }
   Serial.println("Connected to Thread network");
   Serial.println("Waiting for Matter device discovery...");
-  while (!tap.is_online()) {
+  while (!tapON.is_online()) {
     decommission_handler();
     delay(200);
   }
-  Serial.println("Tap is online...");
+  Serial.println("tapON is online...");
+
   while (!shake.is_online()) {
     decommission_handler();
     delay(200);
