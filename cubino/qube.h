@@ -8,13 +8,14 @@ enum QubeFace {
   FACE_LEFT,
   FACE_RIGHT,
   FACE_FRONT,
-  FACE_BACK
+  FACE_BACK,
+  FACE_UNKNOWN = -1 // Added to handle unknown face state
 };
 
 class Qube {
 public:
     Qube()
-      : movement(), leds() // Explicitly construct members here
+      : movement(), leds()
     {}
 
     void setup();
@@ -22,15 +23,15 @@ public:
 
     bool isShaked();
     bool isTapped();
-    int isFaceChanged(); // Returns face id if changed, -1 otherwise
-
-    QubeFace detectFace();
+    QubeFace isUpFaceChanged();
 
 private:
     ModulinoMovement movement;
     ModulinoPixels leds;
 
-    unsigned long lastFace = -1; // Invalid face to force update on first run
+    QubeFace detectUpFace();
+
+    unsigned long lastFace = FACE_UNKNOWN; // Invalid face to force update on first run
 
     float ax = 0.0f;
     float ay = 0.0f;
@@ -46,4 +47,6 @@ private:
     static constexpr float highThreshold = 1.0f;
     static constexpr float lowThreshold = 0.5f;
     static constexpr unsigned long maxInterval = 200; // Max time between high and low threshold
+
+    static constexpr unsigned long faceStableThreshold = 300; // ms, time to consider face stable
 };

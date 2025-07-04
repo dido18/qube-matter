@@ -69,36 +69,36 @@ bool Qube::isTapped() {
   return false; // No tap detected
 }
 
-QubeFace Qube::detectFace() {
+QubeFace Qube::detectUpFace() {
     const float threshold = 0.8f; // g, adjust as needed
     if (this->az > threshold) return FACE_TOP;
     if (this->az < -threshold) return FACE_BOTTOM;
-    if (this->ax > threshold) return FACE_RIGHT;
-    if (this->ax < -threshold) return FACE_LEFT;
-    if (this->ay > threshold) return FACE_FRONT;
-    if (this->ay < -threshold) return FACE_BACK;
+    if (this->ax > threshold) return FACE_FRONT;
+    if (this->ax < -threshold) return FACE_BACK;
+    if (this->ay > threshold) return FACE_RIGHT;
+    if (this->ay < -threshold) return FACE_LEFT;
     return FACE_TOP; // Default/fallback
 }
 
-int Qube::isFaceChanged() {
+QubeFace Qube::isUpFaceChanged() {
     static QubeFace candidateFace = FACE_TOP;
     static unsigned long candidateStart = 0;
-    const unsigned long faceStableThreshold = 300; // ms, adjust as needed
 
-    QubeFace currentFace = detectFace();
+
+    QubeFace currentFace = detectUpFace();
     unsigned long now = millis();
 
     if (currentFace != this->lastFace) {
         if (currentFace != candidateFace) {
             candidateFace = currentFace;
             candidateStart = now;
-        } else if (now - candidateStart >= faceStableThreshold) {
+        } else if (now - candidateStart >= this->faceStableThreshold) {
             this->lastFace = currentFace;
-            return static_cast<int>(currentFace);
+            return currentFace;
         }
     } else {
         candidateFace = currentFace;
         candidateStart = now;
     }
-    return -1;
+    return FACE_UNKNOWN; // Default/fallback if no change detected
 }
