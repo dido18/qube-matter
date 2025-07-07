@@ -31,7 +31,8 @@ bool Qube::isShaked() {
             if (magnitude > this->shakeThreshold) {
                 if (now - this->shakeStart > this->shakeDuration) {
                     this->shakeState = 0; // SHAKE_IDLE
-                     this->leds.clear();
+                    this->leds.clear();
+                    this->leds.show();
                     return true;  // Shake confirmed
                 }
             } else {
@@ -58,6 +59,7 @@ bool Qube::isTapped() {
         if (now - this->peakTime <= this->maxInterval) {
           this->tapState = 0; // IDLE
           this->leds.clear();
+          this->leds.show();
           return true;  // Valid tap detected
         } else {
           this->tapState = 0; // Timeout
