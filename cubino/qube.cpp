@@ -42,31 +42,17 @@ bool Qube::isShaked() {
 }
 
 bool Qube::isTapped() {
-  float Az = abs(this->az);
+  const float TAP_THRESHOLD = 0.5;  // Adjust as needed (in g's)
+  const unsigned long TAP_COOLDOWN = 300; // in ms
+
   unsigned long now = millis();
-  switch (this->tapState) {
-    case 0: // IDLE
-      if (Az > this->highThreshold) {
-        this->peakTime = now;
-        this->tapState = 1; // PEAK_DETECTED
-      }
-      break;
-
-    case 1: // PEAK_DETECTED
-      if (Az < this->lowThreshold) {
-        if (now - this->peakTime <= this->maxInterval) {
-          this->tapState = 0; // IDLE
-          return true;  // Valid tap detected
-        } else {
-          this->tapState = 0; // Timeout
-        }
-      } else if (now - this->peakTime > this->maxInterval) {
-        this->tapState = 0;  // Timeout
-      }
-      break;
+  float deltaAz = fabs(this->az - 1.0);  
+  if (deltaAz > TAP_THRESHOLD && (now - this->peakTime > TAP_COOLDOWN)) {
+      Serial.println("Tap detected (software)!");
+      this->peakTime = now;
+      return true;
   }
-
-  return false; // No tap detected
+  return false;
 }
 
 QubeFace Qube::detectUpFace() {
