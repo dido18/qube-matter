@@ -30,6 +30,7 @@ private:
     ModulinoPixels leds;
 
     QubeFace detectUpFace();
+    void setFaceColor(QubeFace face);
 
     unsigned long lastFace = FACE_UNKNOWN; // Invalid face to force update on first run
 
