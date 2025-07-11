@@ -3,6 +3,7 @@
 Qube qube;
 
 // #define ENABLE_MATTER
+// #define ENABLE_LOGGING
 
 #ifdef ENABLE_MATTER
 #include <Matter.h>
@@ -13,12 +14,14 @@ MatterSwitch faceSwitch[6]; // One for each face
 #endif
 
 void onFaceChanged(Qube& cube, QubeFace face){
+#ifdef ENABLE_LOGGING
     Serial.print("Face changed to: ");
-	  Serial.println(face);
+  	Serial.println(FaceToString(face));
+#endif
     switch (face)
     {
     case FACE_TOP:
-         cube.SetColor(255,0,0);
+        cube.SetColor(255,0,0); 
         break;
     case FACE_BOTTOM:
          cube.SetColor(0,255,0);

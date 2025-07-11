@@ -14,6 +14,19 @@ enum QubeFace {
   FACE_UNKNOWN = -1
 };
 
+// Helper function to convert QubeFace to string
+inline const char* FaceToString(QubeFace face) {
+    switch (face) {
+        case FACE_TOP:    return "TOP";
+        case FACE_BOTTOM: return "BOTTOM";
+        case FACE_LEFT:   return "LEFT";
+        case FACE_RIGHT:  return "RIGHT";
+        case FACE_FRONT:  return "FRONT";
+        case FACE_BACK:   return "BACK";
+        default:          return "UNKNOWN";
+    }
+}
+
 class Qube; // Forward declaration for use in CallbackFunction
 
 typedef void (*CallbackFunction)(Qube&, QubeFace);
@@ -63,7 +76,7 @@ private:
         if (ay < -threshold) return FACE_LEFT;
         return FACE_UNKNOWN; // Default/fallback
     }
-    
+
 };
 
 #endif
