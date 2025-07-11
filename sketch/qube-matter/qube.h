@@ -1,5 +1,7 @@
-#pragma once
+#ifndef QUBE_H
+#define QUBE_H
 
+#include "Arduino.h"
 #include "Modulino.h"
 
 enum QubeFace {
@@ -9,44 +11,72 @@ enum QubeFace {
   FACE_RIGHT = 3,
   FACE_FRONT = 4,
   FACE_BACK = 5,
-  FACE_UNKNOWN = -1 // Added to handle unknown face state
+  FACE_UNKNOWN = -1
 };
+
+// Helper function to convert QubeFace to string
+inline const char* FaceToString(QubeFace face) {
+    switch (face) {
+        case FACE_TOP:    return "TOP";
+        case FACE_BOTTOM: return "BOTTOM";
+        case FACE_LEFT:   return "LEFT";
+        case FACE_RIGHT:  return "RIGHT";
+        case FACE_FRONT:  return "FRONT";
+        case FACE_BACK:   return "BACK";
+        default:          return "UNKNOWN";
+    }
+}
+
+class Qube; // Forward declaration for use in CallbackFunction
+
+typedef void (*CallbackFunction)(Qube&, QubeFace);
 
 class Qube {
 public:
     Qube()
       : movement(), leds()
-    {}
+    { }
 
     void setup();
     void update();
 
-    bool isShaked();
-    bool isTapped();
-    QubeFace isUpFaceChanged();
+    void setOnFaceChange(CallbackFunction callback) {
+        this->onFaceChange = callback;
+    }
+
+    void SetColor( uint8_t r, uint8_t g, uint8_t b, uint8_t brightness = 5){
+        for (int i = 0; i < 6; ++i) {
+            this->leds.set(i, ModulinoColor(r, g, b), brightness);
+        }
+        this->leds.show();
+    }
 
 private:
     ModulinoMovement movement;
     ModulinoPixels leds;
 
-    QubeFace detectUpFace();
+    CallbackFunction onFaceChange = NULL;
 
-    unsigned long lastFace = FACE_UNKNOWN; // Invalid face to force update on first run
+    QubeFace upFace = FACE_UNKNOWN;
+    QubeFace candidateFace = FACE_UNKNOWN;
+    unsigned long candidateStart = 0;
+    int faceState = 0;             // 0: face idle, 1: face changed
 
-    float ax = 0.0f;
-    float ay = 0.0f;
-    float az = 0.0f;
+    QubeFace detectUpFace() {
+        float ax = this->movement.getX();
+        float ay = this->movement.getY();
+        float az = this->movement.getZ();
 
-    int shakeState = 0; // 0: idle, 1: running
-    unsigned long shakeStart = 0;
-    static constexpr float shakeThreshold = 1.5f;
-    static constexpr unsigned long shakeDuration = 100;
+        const float threshold = 0.8f; // g, adjust as needed
+        if (az > threshold) return FACE_TOP;
+        if (az < -threshold) return FACE_BOTTOM;
+        if (ax > threshold) return FACE_FRONT;
+        if (ax < -threshold) return FACE_BACK;
+        if (ay > threshold) return FACE_RIGHT;
+        if (ay < -threshold) return FACE_LEFT;
+        return FACE_UNKNOWN; // Default/fallback
+    }
 
-    int tapState = 0; // 0: idle, 1: peak detected
-    unsigned long peakTime = 0;
-    static constexpr float highThreshold = 1.0f;
-    static constexpr float lowThreshold = 0.5f;
-    static constexpr unsigned long maxInterval = 200; // Max time between high and low threshold of te tap
-
-    static constexpr unsigned long faceStableThreshold = 300; // ms, time to consider face stable
 };
+
+#endif
