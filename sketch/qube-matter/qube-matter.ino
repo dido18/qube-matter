@@ -1,58 +1,66 @@
 #include "qube.h"
-#include <Matter.h>
-#include <MatterSwitch.h>
 
 Qube qube;
 
 // #define ENABLE_MATTER
 
 #ifdef ENABLE_MATTER
+#include <Matter.h>
+#include <MatterSwitch.h>
 MatterSwitch tapON;
 MatterSwitch shake;
 MatterSwitch faceSwitch[6]; // One for each face
 #endif
 
-void matterSetup();
-void decommission_handler();
+void onFaceChanged(Qube& cube, QubeFace face){
+    Serial.print("Face changed to: ");
+	  Serial.println(face);
+    switch (face)
+    {
+    case FACE_TOP:
+         cube.SetColor(255,0,0);
+        break;
+    case FACE_BOTTOM:
+         cube.SetColor(0,255,0);
+        break;
+    case FACE_LEFT:
+         cube.SetColor(0,0,255);
+        break;
+    case FACE_RIGHT:
+         cube.SetColor(255,255,0);
+        break;
+    case FACE_FRONT:
+         cube.SetColor(255,0,255);
+        break;
+    case FACE_BACK:
+         cube.SetColor(0,255,255);
+        break;
+    default:
+        break;
+    }
+    return;
+}
 
 void setup() {
   Serial.begin(115200);
-
+  qube.setOnFaceChange(onFaceChanged);
   qube.setup();
+
+#ifdef ENABLE_MATTER
   matterSetup();
+#endif
 }
 
 void loop() {
   qube.update();
 
-  if(qube.isTapped()) {
-    Serial.println("tapped");
 #ifdef ENABLE_MATTER
-    tapON.set_state(true);
-#endif
-  }
-
-  if(qube.isShaked()){
-    Serial.println("shaked");
-#ifdef ENABLE_MATTER
-    shake.set_state(true);
-#endif
-  }
-
-  QubeFace changedFace = qube.isUpFaceChanged();
-  if (changedFace != FACE_UNKNOWN) {
-     Serial.printf("Face %d (%s) is pointing to sky\n", changedFace, faceToString(changedFace));
-#ifdef ENABLE_MATTER
-    faceSwitch[changedFace].set_state(true);
-#endif
-  }
-
-  // Handle the decommissioning process if requested
   decommission_handler();
+#endif
 }
 
-void matterSetup() {
 #ifdef ENABLE_MATTER
+void matterSetup() {
   Matter.begin();
   tapON.begin();
   shake.begin();
@@ -104,7 +112,6 @@ void matterSetup() {
     Serial.printf("FaceSwitch %d is online...\n", i);
   }
   return ;
-#endif
 }
 
 void decommission_handler()
@@ -143,15 +150,4 @@ void decommission_handler()
     Matter.decommission();
   }
 }
-
-const char* faceToString(int face) {
-  switch (face) {
-    case FACE_TOP: return "TOP";
-    case FACE_BOTTOM: return "BOTTOM";
-    case FACE_LEFT: return "LEFT";
-    case FACE_RIGHT: return "RIGHT";
-    case FACE_FRONT: return "FRONT";
-    case FACE_BACK: return "BACK";
-    default: return "UNKNOWN";
-  }
-}
+#endif
