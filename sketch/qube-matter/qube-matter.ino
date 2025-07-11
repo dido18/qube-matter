@@ -2,7 +2,7 @@
 
 Qube qube;
 
-// #define ENABLE_MATTER
+#define ENABLE_MATTER
 // #define ENABLE_LOGGING
 
 #ifdef ENABLE_MATTER
@@ -10,7 +10,7 @@ Qube qube;
 #include <MatterSwitch.h>
 MatterSwitch tapON;
 MatterSwitch shake;
-MatterSwitch faceSwitch[6]; // One for each face
+MatterSwitch faceSwitch[6]; 
 #endif
 
 void onFaceChanged(Qube& cube, QubeFace face){
@@ -18,10 +18,15 @@ void onFaceChanged(Qube& cube, QubeFace face){
     Serial.print("Face changed to: ");
   	Serial.println(FaceToString(face));
 #endif
+
+#ifdef ENABLE_MATTER
+    faceSwitch[face].set_state(true);
+#endif
+
     switch (face)
     {
     case FACE_TOP:
-        cube.SetColor(255,0,0); 
+        cube.SetColor(255,0,0);
         break;
     case FACE_BOTTOM:
          cube.SetColor(0,255,0);
