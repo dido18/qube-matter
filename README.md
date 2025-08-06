@@ -3,7 +3,7 @@
 > Qube: Make your smart home tangible!
 
 
-Qube is a Matter-enabled smart cube device that allows you to control smart home actions by physically rotating or tapping the cube.
+Qube is a Matter-enabled smart cube device that allows you to control smart home actions by physically rotating the cube.
 
 Each face of the Qube can be assigned a unique color, label, and action, making it a versatile and interactive controller for your Matter-compatible devices and automations.
 
