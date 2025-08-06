@@ -2,51 +2,53 @@
 
 Qube qube;
 
+// Comment the following line to disable Matter support. Useful for testing cube interaction without Matter
 #define ENABLE_MATTER
-// #define ENABLE_LOGGING
+//#define ENABLE_LOGGING
 
 #ifdef ENABLE_MATTER
-#include <Matter.h>
-#include <MatterSwitch.h>
-MatterSwitch tapON;
-MatterSwitch shake;
-MatterSwitch faceSwitch[6]; 
+  #include <Matter.h>
+  #include <MatterSwitch.h>
+  MatterSwitch faceSwitch[6];
 #endif
 
-void onFaceChanged(Qube& cube, QubeFace face){
+void onFaceChanged(Qube& cube, QubeFace previousFace, QubeFace newFace){
 #ifdef ENABLE_LOGGING
-    Serial.print("Face changed to: ");
-  	Serial.println(FaceToString(face));
+  Serial.print("Face changed from: ");
+  Serial.print(FaceToString(previousFace));
+  Serial.print(" to: ");
+  Serial.println(FaceToString(newFace));
 #endif
 
 #ifdef ENABLE_MATTER
-    faceSwitch[face].set_state(true);
+  faceSwitch[previousFace].set_state(false);
+  faceSwitch[newFace].set_state(true);
 #endif
 
-    switch (face)
-    {
-    case FACE_TOP:
-        cube.SetColor(255,0,0);
-        break;
-    case FACE_BOTTOM:
-         cube.SetColor(0,255,0);
-        break;
-    case FACE_LEFT:
-         cube.SetColor(0,0,255);
-        break;
-    case FACE_RIGHT:
-         cube.SetColor(255,255,0);
-        break;
-    case FACE_FRONT:
-         cube.SetColor(255,0,255);
-        break;
-    case FACE_BACK:
-         cube.SetColor(0,255,255);
-        break;
-    default:
-        break;
-    }
-    return;
+  switch (newFace)
+  {
+  case FACE_TOP:
+    cube.SetColor(255,0,0);
+    break;
+  case FACE_BOTTOM:
+    cube.SetColor(0,255,0);
+    break;
+  case FACE_LEFT:
+    cube.SetColor(0,0,255);
+    break;
+  case FACE_RIGHT:
+    cube.SetColor(255,255,0);
+    break;
+  case FACE_FRONT:
+    cube.SetColor(255,0,255);
+    break;
+  case FACE_BACK:
+    cube.SetColor(0,255,255);
+    break;
+  default:
+    break;
+  }
+  return;
 }
 
 void setup() {
@@ -70,18 +72,14 @@ void loop() {
 #ifdef ENABLE_MATTER
 void matterSetup() {
   Matter.begin();
-  tapON.begin();
-  shake.begin();
 
   pinMode(BTN_BUILTIN, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LED_BUILTIN_INACTIVE);
 
-  // TODO: det_device_name does not work on alexa ??
-  // tapON.set_device_name("MyTap ON");
-
   for (int i = 0; i < 6; ++i) {
     faceSwitch[i].begin();
+    // TODO: set_device_name does not work on alexa ??
     // faceSwitch[i].set_device_name(faceToString(i));
   }
 
@@ -94,30 +92,21 @@ void matterSetup() {
   while (!Matter.isDeviceCommissioned()) {
     delay(200);
   }
+#ifdef ENABLE_LOGGING
   Serial.println("Waiting for Thread network...");
+#endif
   while (!Matter.isDeviceThreadConnected()) {
     decommission_handler();
     delay(200);
   }
-  Serial.println("Connected to Thread network");
-  Serial.println("Waiting for Matter device discovery...");
-  while (!tapON.is_online()) {
-    decommission_handler();
-    delay(200);
-  }
-  Serial.println("tapON is online...");
-
-  while (!shake.is_online()) {
-    decommission_handler();
-    delay(200);
-  }
-  Serial.println("Shake is online...");
-   for (int i = 0; i < 6; ++i) {
+  for (int i = 0; i < 6; ++i) {
     while (!faceSwitch[i].is_online()) {
       decommission_handler();
       delay(200);
     }
+#ifdef ENABLE_LOGGING
     Serial.printf("FaceSwitch %d is online...\n", i);
+#endif
   }
   return ;
 }

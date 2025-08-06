@@ -29,7 +29,10 @@ inline const char* FaceToString(QubeFace face) {
 
 class Qube; // Forward declaration for use in CallbackFunction
 
-typedef void (*CallbackFunction)(Qube&, QubeFace);
+// This function will be called when the face of the Qube changes.
+// It provides the Qube instance, the previous face, and the new face.
+// This allows for custom actions to be performed when the face changes.
+typedef void (*CallbackFunction)(Qube&, QubeFace, QubeFace);
 
 class Qube {
 public:

@@ -36,11 +36,12 @@ void Qube::update() {
 
         if (newFace == this->candidateFace){
             if (now - this->candidateStart > 500) {;
+                QubeFace previousFace = this->upFace;
                 this->upFace = newFace;
                 this->candidateFace = FACE_UNKNOWN; // Reset candidate face
                 this->faceState = 0;
                 if (this->onFaceChange) {
-                    this->onFaceChange(*this, this->upFace);
+                    this->onFaceChange(*this, previousFace,  this->upFace);
                 }
                 break;
             }
