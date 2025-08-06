@@ -29,7 +29,8 @@ inline const char* FaceToString(QubeFace face) {
 
 class Qube; // Forward declaration for use in CallbackFunction
 
-typedef void (*CallbackFunction)(Qube&, QubeFace);
+// Callback when a face is changed.
+typedef void (*CallbackFunction)(Qube&, QubeFace, QubeFace);
 
 class Qube {
 public:
