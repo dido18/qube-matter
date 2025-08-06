@@ -54,12 +54,4 @@ Each face of the Qube can be assigned a unique color, label, and action, making 
   - "When" clauses are limited to "single touch" events.
   - Other sensor types (e.g., Illuminance) may not be available for triggers in Alexa routines.
 
-## Example Code Snippet
 
-```cpp
-void onFaceChanged(Qube& cube, QubeFace previousFace, QubeFace newFace){
-  // Set LED color and trigger Matter switch for the new face
-  cube.SetColor(255, 0, 0); // Example: set to red
-  // Add your custom action here
-}
-```
