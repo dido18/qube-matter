@@ -3,8 +3,8 @@
 Qube qube;
 
 // Comment the following line to disable Matter support. Useful for testing cube interaction without Matter
-//#define ENABLE_MATTER
-#define ENABLE_LOGGING
+#define ENABLE_MATTER
+//#define ENABLE_LOGGING
 
 #ifdef ENABLE_MATTER
   #include <Matter.h>
