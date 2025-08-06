@@ -92,7 +92,9 @@ void matterSetup() {
   while (!Matter.isDeviceCommissioned()) {
     delay(200);
   }
+#ifdef ENABLE_LOGGING
   Serial.println("Waiting for Thread network...");
+#endif
   while (!Matter.isDeviceThreadConnected()) {
     decommission_handler();
     delay(200);
@@ -102,7 +104,9 @@ void matterSetup() {
       decommission_handler();
       delay(200);
     }
+#ifdef ENABLE_LOGGING
     Serial.printf("FaceSwitch %d is online...\n", i);
+#endif
   }
   return ;
 }
