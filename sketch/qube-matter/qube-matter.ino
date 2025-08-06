@@ -2,7 +2,8 @@
 
 Qube qube;
 
-#define ENABLE_MATTER
+// Comment the following line to disable Matter support. Useful for testing cube interaction without Matter
+//#define ENABLE_MATTER
 #define ENABLE_LOGGING
 
 #ifdef ENABLE_MATTER
@@ -11,17 +12,20 @@ Qube qube;
   MatterSwitch faceSwitch[6];
 #endif
 
-void onFaceChanged(Qube& cube, QubeFace face){
+void onFaceChanged(Qube& cube, QubeFace previousFace, QubeFace newFace){
 #ifdef ENABLE_LOGGING
-  Serial.print("Face changed to: ");
-  Serial.println(FaceToString(face));
+  Serial.print("Face changed from: ");
+  Serial.print(FaceToString(previousFace));
+  Serial.print(" to: ");
+  Serial.println(FaceToString(newFace));
 #endif
 
 #ifdef ENABLE_MATTER
-  faceSwitch[face].set_state(true);
+  faceSwitch[previousFace].set_state(false);
+  faceSwitch[newFace].set_state(true);
 #endif
 
-  switch (face)
+  switch (newFace)
   {
   case FACE_TOP:
     cube.SetColor(255,0,0);
