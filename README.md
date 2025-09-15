@@ -15,6 +15,9 @@ It allows integration with Matter-compatible hubs and platforms (such as Alexa, 
 
 ## Getting Started
 
+> [!IMPORTANT]  
+> The Qube can communicate with Matter hubs through a Thread network, so the hubs used must be Thread border routers. See [here]( https://docs.arduino.cc/tutorials/nano-matter/user-manual/#with-amazon-alexa) for the complete list of compatible Matter hub.
+
 1. **Hardware**
    - [1x Arduino Nano Matter](https://docs.arduino.cc/hardware/nano-matter/) ~22€
    - [1x Arduino Nano Connector Carrier](https://store.arduino.cc/products/nano-connector-carrier) ~13€
