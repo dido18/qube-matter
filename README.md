@@ -5,53 +5,36 @@
 
 Qube is a Matter-enabled smart cube device that allows you to control smart home actions by physically rotating the cube.
 
-Each face of the Qube can be assigned a unique color, label, and action, making it a versatile and interactive controller for your Matter-compatible devices and automations.
+Qube acts as a Matter device with 6 matter switches.
 
-## Features
+Qube detects which face is pointing up. Every time a new face is pointed up the Qube set the the matter switch to true.
 
-- **Matter Integration:**
-  Qube acts as a Matter device, allowing seamless integration with Matter-compatible hubs and platforms (such as Alexa, Google Home, Apple HomeKit, etc.).
+The built-in LEDs provide visual feedback, changing color based on the active face.
 
-- **Face Detection:**
-  Qube detects which face is pointing up and can trigger different actions based on the current face.
-
-- **Customizable Actions:**
-  Each face can be assigned a unique action (callback), color, and label. Actions can include toggling lights, activating scenes, or any custom logic.
-
-- **LED Feedback:**
-  The built-in LEDs provide visual feedback, changing color based on the active face or gesture.
-
-## Example Actions
-
-- **Switch on/off smart lights or devices by rotating the cube to a specific face.**
-- **Trigger different scenes or automations for each face.**
-- **Visual feedback with LEDs to indicate the current face or action.**
+It allows integration with Matter-compatible hubs and platforms (such as Alexa, Google Home, etc.).
 
 ## Getting Started
 
-1. **Hardware:**
+> [!IMPORTANT]  
+> The Qube can communicate with Matter hubs through a Thread network, so the hubs used must be Thread border routers. See [here]( https://docs.arduino.cc/tutorials/nano-matter/user-manual/#with-amazon-alexa) for the complete list of compatible Matter hub.
+
+1. **Hardware**
    - [1x Arduino Nano Matter](https://docs.arduino.cc/hardware/nano-matter/) ~22€
    - [1x Arduino Nano Connector Carrier](https://store.arduino.cc/products/nano-connector-carrier) ~13€
    - [1x Modulino Movement](https://store.arduino.cc/products/modulino-movement) ~13€
    - [1x Modulino Pixels](https://store.arduino.cc/products/modulino-pixels) 11€
-   - 4x AA batteries
-   - 1x 4-AA Battery Holder ~3€
-   - 1x 3D printed cube
+   - 4xAA batteries
+   - 1x4-AA Battery Holder ~3€
+   - 1x3D printed cube
 
-2. **Setup:**
+2. **Configuration**
+
    - Clone this repository.
-   - Open the project in Arduino IDE
-   - Ensure the folder name matches the `.ino` file name (e.g., `qube-matter/qube-matter.ino`).
+   - Open the project  `qube-matter/qube-matter.ino` into the Arduino IDE
+   - Before uploading decomment the line `#define ENABLE_MATTER` (and comment the in the `#define ENABLE_LOGGING`) `qube-matter.ino` file
+   - Upload the code into the board
+   - Follow the [Arduino matter guide](https://docs.arduino.cc/tutorials/nano-matter/user-manual/#matter) to commission the Matter device into you smart device by looking at the pairing code printed in the serial monitor of the Arduino IDE.
+   - After the commission, the *6 matter switches* should appears in the smart app.
+   - Resolve each matter switch to each face of the cube.  NOTE: since it is not possible to give a "name" to the matter switch (at least in the alexa app) you need to manually resolve what is the matter switch associated to a cube face. One way to do this is to associate a simple action to each matter switch (e.g., send a notifiction), move each face of the cube, rename the matter switch with the current face.
 
-3. **Commissioning:**
-   - Use your Matter hub to commission the Qube device.
-   - Follow the serial output for pairing codes and status.
-
-## Limitations
-
-- **Alexa Integration:**
-  - Only MatterSwitch triggers are available for automations.
-  - "When" clauses are limited to "single touch" events.
-  - Other sensor types (e.g., Illuminance) may not be available for triggers in Alexa routines.
-
-
+Use your smart app to associated any other action to each of the matter switch.
