@@ -38,3 +38,5 @@ It allows integration with Matter-compatible hubs and platforms (such as Alexa, 
    - Resolve each matter switch to each face of the cube.  NOTE: since it is not possible to give a "name" to the matter switch (at least in the alexa app) you need to manually resolve what is the matter switch associated to a cube face. One way to do this is to associate a simple action to each matter switch (e.g., send a notifiction), move each face of the cube, rename the matter switch with the current face.
 
 Use your smart app to associated any other action to each of the matter switch.
+
+*Decommission*: To set up the Qube-Matter with a different smart home system (for example, switching from Alexa to Google Home), you must first decommission the device. To do this, press and hold the button for at least 10 seconds. This resets the Qube-Matter, allowing it to be paired with a new platform.
