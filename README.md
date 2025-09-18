@@ -41,9 +41,8 @@ If using two Modulino Pixels modules, you must assign a unique address to the se
 4. Upload the AddressChanger sketch to your board.
 5. In the serial monitor, enter: `<CURRENT_ADDRESS> 0x4D` (e.g., `0x6C 0x4D`).
 6. Press Enter and wait for completion.
-7. Disconnect the first Modulino Pixels and repeat for the second if needed.
 
-> The new address (`0x4D`) must be reflected in your main sketch when initializing the second Modulino Pixels.
+The new address (`0x4D`) is the one used in the sketch to communicate with the second modulino.
 
 
 
