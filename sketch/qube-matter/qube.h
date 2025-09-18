@@ -50,13 +50,16 @@ public:
     void SetColor( uint8_t r, uint8_t g, uint8_t b, uint8_t brightness = 5){
         for (int i = 0; i < 8; ++i) {
             this->leds.set(i, ModulinoColor(r, g, b), brightness);
+            this->leds2.set(i, ModulinoColor(r, g, b), brightness);
         }
         this->leds.show();
+        this->leds2.show();
     }
 
 private:
     ModulinoMovement movement;
     ModulinoPixels leds;
+    ModulinoPixels leds2 = ModulinoPixels(0x4D);
 
     CallbackFunction onFaceChange = NULL;
 

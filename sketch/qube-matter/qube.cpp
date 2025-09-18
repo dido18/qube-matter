@@ -5,6 +5,8 @@ void Qube::setup() {
     this->movement.begin();
     this->leds.begin();
     this->leds.clear();
+    this->leds2.clear();
+    this->leds2.begin();
 
     this->upFace = this->detectUpFace();
     this->candidateFace = FACE_UNKNOWN;
